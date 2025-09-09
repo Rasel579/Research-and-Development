@@ -64,11 +64,11 @@ class Tokenizer:
             f.write(f"{len(self.special_tokens)}\n")
             for special, idx in self.special_tokens.items():
                 f.write(f"{special} {idx}\n")
-            for idx1, idx2 in self.merges.items():
+            for idx1, idx2 in self.merges:
                 f.write(f"{idx1} {idx2}\n")
         vocab_file = prefix_file + ".vocab"
         inverted_merges = { idx: pair for idx, pair in self.merges.items() }
-        with open(vocab_file, "w") as f:
+        with open(vocab_file, "w", encoding='utf-8') as f:
             for idx, token in self.vocab.items():
                 s = render_tokens(token)
                 if idx in inverted_merges:
@@ -90,13 +90,13 @@ class Tokenizer:
             self.pattern = f.readline().strip()
             num_special = int(f.readline().strip())
             for _ in range(num_special):
-                special, idx = f.readline().strip().split()
-                special_tokens[special] = idx
+                special, special_idx = f.readline().strip().split()
+                special_tokens[special] = special_idx
 
             for line in f:
                 idx1, idx2 = map(int, line.split())
                 merges[(idx1, idx2)] = idx
-                idx = idx + 1
+                idx += 1
             self.merges = merges
             self.special_tokens = special_tokens
             self.vocab = self._build_vocab()
