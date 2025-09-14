@@ -31,7 +31,7 @@ class Head(nn.Module):
         return out
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, num_heads: int, head_size: int, n_embeddings: int, dropout: float) -> None:
+    def __init__(self, num_heads: int, head_size: int, block_size:int, n_embeddings: int, dropout: float) -> None:
         super().__init__()
         self.heads = nn.ModuleList([Head(head_size, n_embeddings, block_size, dropout) for _ in range(num_heads)])
         self.projection = nn.Linear(head_size*num_heads, n_embeddings, bias=False)
@@ -54,10 +54,10 @@ class FeedForward(nn.Module):
         return self.net(x)
 
 class Block(nn.Module):
-    def __init__(self, n_embedding: int, n_head: int, dropout: float) -> None:
+    def __init__(self, n_embedding: int, n_head: int, block_size: int, dropout: float) -> None:
         super().__init__()
         head_size = n_embedding // n_head
-        self.attention = MultiHeadAttention(n_head, head_size, n_embedding, dropout)
+        self.attention = MultiHeadAttention(n_head, head_size, block_size, n_embedding, dropout)
         self.feed_forward = FeedForward(n_embedding, dropout)
         self.layer_norm1 = nn.LayerNorm(n_embedding)
         self.layer_norm2 = nn.LayerNorm(n_embedding)
@@ -67,13 +67,13 @@ class Block(nn.Module):
         return x
 
 class GPTLanguageModel(nn.Module):
-    def __init__(self, vocab_size: int, n_embeddings: int, block_size: int, n_head: int, n_layers: int, device: str) -> None:
+    def __init__(self, vocab_size: int, n_embeddings: int, block_size: int, n_head: int, n_layers: int, dropout: float, device: str) -> None:
         super().__init__()
         self.block_size = block_size
         self.device = device
         self.token_embedding_table = nn.Embedding(vocab_size, n_embeddings)
         self.positional_embedding_table = nn.Embedding(block_size, n_embeddings)
-        self.blocks = nn.Sequential(*[Block(n_embeddings, n_head= n_head, dropout=dropout) for _ in range(n_layers)])
+        self.blocks = nn.Sequential(*[Block(n_embeddings, n_head= n_head, block_size=block_size, dropout=dropout) for _ in range(n_layers)])
         self.final_layer_norm = nn.LayerNorm(n_embeddings)
         self.final_linear_layer = nn.Linear(n_embeddings, vocab_size)
         self.apply(self._init_weights)
@@ -118,10 +118,16 @@ if __name__ == "__main__":
     n_embeddings = 384
     n_head = 6
     n_layers = 6
-    dropout = 0.2
     vocab_size = 1034
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = GPTLanguageModel(vocab_size=vocab_size, n_embeddings=n_embeddings, block_size=block_size, n_head=n_head, n_layers=n_layers, device=device)
+    dropout = 0.2
+    model = GPTLanguageModel(vocab_size=vocab_size,
+                             n_embeddings=n_embeddings,
+                             block_size=block_size,
+                             n_head=n_head,
+                             n_layers=n_layers,
+                             dropout=dropout,
+                             device=device)
     model = model.to(device)
     print(sum(p.numel() for p in model.parameters()) / 1e6, 'M parameters')
     batch_size = 1
