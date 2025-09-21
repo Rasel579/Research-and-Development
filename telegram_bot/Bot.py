@@ -1,5 +1,5 @@
 from transformers import GPTLanguageModel
-from bpe import  BasicTokenizer
+from bpe import RegexTokenizer
 import torch
 import os
 from telegram import Update
@@ -7,7 +7,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 import asyncio
 
 
-def get_vocab_size(tokenizer_param: BasicTokenizer):
+def get_vocab_size(tokenizer_param: RegexTokenizer):
     return len(tokenizer_param.vocab) + len(tokenizer_param.special_tokens)
 
 
@@ -26,7 +26,7 @@ class Bot:
 
 
     def load_model(self):
-        tokenizer = BasicTokenizer()
+        tokenizer = RegexTokenizer()
         tokenizer.load(model_file=self.tokenizer_pass)
         self.tokenizer = tokenizer
 
@@ -46,7 +46,8 @@ class Bot:
             n_head=n_head,
             device=self.device,
             n_layers=n_layer,
-            dropout=dropout
+            dropout=dropout,
+            ignore_index=self.tokenizer.special_tokens["<|padding|>"]
         )
         model.to(self.device)
         model = torch.compile(model)
@@ -95,18 +96,11 @@ class Bot:
             return response
 
         except Exception as e:
+            print(e)
             return "⚠️ Произошла ошибка при генерации. Попробуйте еще раз."
 
     def _generate_sync(self, user_text: str):
-        input_tokens = self.tokenizer.encode(user_text)
-        input_tokens = torch.tensor(input_tokens, dtype=torch.long).unsqueeze(0).to(self.device)
-        self.model.eval()
-        with torch.no_grad():
-            output = self.model.generate(input_tokens, 100)
-        a = output[0]
-        response = self.tokenizer.decode(a.tolist())
-        if response.startswith(user_text):
-            response = response[len(user_text):].strip()
+        response = self.model.generate_answer(user_text, self.tokenizer)
         return response
 
     def run_bot(self):
@@ -116,8 +110,8 @@ class Bot:
 
 if __name__ == '__main__':
    BOT_API = os.getenv('TELEGRAM_TOKEN')
-   MODEL_PATH = f'../output/pretrain/v3/checkpoint100.pth'
-   TOKENIZER_PATH = '../output/tokenizer/tokenzier_v1.model'
+   MODEL_PATH = f'../output/pretrain/v4/checkpoint40.pth'
+   TOKENIZER_PATH = '../output/tokenizer/tokenzier_v2.model'
    bot = Bot(BOT_API, MODEL_PATH, TOKENIZER_PATH)
    bot.run_bot()
 
