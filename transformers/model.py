@@ -67,8 +67,9 @@ class Block(nn.Module):
         return x
 
 class GPTLanguageModel(nn.Module):
-    def __init__(self, vocab_size: int, n_embeddings: int, block_size: int, n_head: int, n_layers: int, dropout: float, device: str) -> None:
+    def __init__(self, vocab_size: int, n_embeddings: int, block_size: int, n_head: int, n_layers: int, dropout: float, device: str, ignore_index = -100) -> None:
         super().__init__()
+        self.ignore_index = ignore_index
         self.block_size = block_size
         self.device = device
         self.token_embedding_table = nn.Embedding(vocab_size, n_embeddings)
@@ -100,7 +101,7 @@ class GPTLanguageModel(nn.Module):
             B, T, C = logits.shape
             logits = logits.view(B*T, C)
             targets = targets.view(B*T)
-            loss = F.cross_entropy(logits, targets)
+            loss = F.cross_entropy(logits, targets, ignore_index=self.ignore_index)
         return logits, loss
 
     def generate(self, input_tokens: torch.Tensor, max_new_tokens: int) -> torch.Tensor:

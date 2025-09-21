@@ -91,7 +91,7 @@ class Tokenizer:
             num_special = int(f.readline().strip())
             for _ in range(num_special):
                 special, special_idx = f.readline().strip().split()
-                special_tokens[special] = special_idx
+                special_tokens[special] = int(special_idx)
 
             for line in f:
                 idx1, idx2 = map(int, line.split())
