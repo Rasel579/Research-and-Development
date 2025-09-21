@@ -3,6 +3,9 @@ import torch
 import torch.nn as nn
 from  torch.nn import functional as F
 
+from bpe import Tokenizer, RegexTokenizer
+
+
 def print_model_structure(model: torch.nn.Module, indent: str = '') -> None:
     for name, child in model.named_children():
         params = sum(p.numel() for p in child.parameters())
@@ -114,27 +117,47 @@ class GPTLanguageModel(nn.Module):
             input_tokens = torch.cat((input_tokens, idx_next), dim=1)
         return input_tokens
 
+    def _get_input_tokens(self, message: str, tokenizer: Tokenizer) -> torch.Tensor:
+        input_tokens = tokenizer.encode(f"<|startoftext|>{message}<|separator|>", allowed_special_tokens="all")
+        input_tokens = torch.tensor(input_tokens, dtype=torch.long).unsqueeze(0).to(self.device)
+        return input_tokens
+
+    def generate_answer(self, input_message: str, tokenizer: Tokenizer) -> str:
+        input_tokens = self._get_input_tokens(input_message, tokenizer)
+        model_answer = ""
+        while True:
+            output_tokens = self.generate(input_tokens, 1)
+            last_generated_token = output_tokens[0, -1].item()
+            if last_generated_token == tokenizer.special_tokens["<|endoftext|>"]:
+                break
+            input_tokens = torch.cat((input_tokens, output_tokens[:, -1:]), dim=1)
+            model_answer += tokenizer.decode([last_generated_token])
+            if len(output_tokens[0]) > self.block_size:
+                input_tokens = input_tokens[:, -self.block_size]
+        return model_answer
+
 if __name__ == "__main__":
     block_size = 256
-    n_embeddings = 384
-    n_head = 6
-    n_layers = 6
+    n_embeddings = 512
+    n_head = 8
+    n_layers = 4
     vocab_size = 1034
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dropout = 0.2
+    tokenizer = RegexTokenizer()
+    tokenizer.load(model_file="../output/tokenizer/tokenzier_v2.model")
     model = GPTLanguageModel(vocab_size=vocab_size,
                              n_embeddings=n_embeddings,
                              block_size=block_size,
                              n_head=n_head,
                              n_layers=n_layers,
                              dropout=dropout,
-                             device=device)
+                             device=device,
+                             ignore_index=tokenizer.special_tokens["<|padding|>"]
+                              )
     model = model.to(device)
-    print(sum(p.numel() for p in model.parameters()) / 1e6, 'M parameters')
-    batch_size = 1
-    seq_length = 6
-    x = torch.randint(0, vocab_size, (batch_size, seq_length))
-    x = x.to(device)
-    logits, loss = model(x)
-    print(logits.shape, loss)
-    print_model_structure(model)
+    model = torch.compile(model)
+
+    checkpoint = torch.load("../output/pretrain/v4/checkpoint30.pth")
+    model.load_state_dict(checkpoint['model_state_dict'])
+    print(model.generate_answer(input_message="Привет", tokenizer=tokenizer))
