@@ -197,6 +197,7 @@ VALUES( "OBJ", "Объект");
 CREATE TABLE tree_path (
     ancestor_id BIGINT,
     descendant_id BIGINT,
+    connection_id BIGINT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -207,21 +208,42 @@ DELETE,
 UPDATE ON tree_path TO user_hack;
 
 
-INSERT INTO tree_path(ancestor_id, descendant_id)
-VALUES( 1, 1), -- Скважина - Скважина
-VALUES( 2, 1), -- Куст - Скважина
-VALUES( 2, 2), -- Куст - Куст
-VALUES( 3, 1), -- Пласт - Скважина
-VALUES( 3, 3), -- Пласт - Пласт
-VALUES( 4, 4), -- ЦДНГ - ЦДНГ
-VALUES( 4, 2), -- ЦДНГ -- КУСТ
-VALUES( 5, 5),  -- НГДУ -- НГДУ
-VALUES( 5, 4),  -- НГДУ - ЦДНГ
-VALUES( 5, 6),  -- НГДУ - Месторождение
-VALUES( 6, 6),  -- Месторождение -- Месторождение
-VALUES( 6, 7), -- Месторождение - Объект разработки
-VALUES( 7, 7),  -- Объект разработки - Объект разработки
-VALUES( 7, 3);  -- Объект разработки -Пласт
+INSERT INTO tree_path(ancestor_id, descendant_id, table)
+VALUES( 1, 1, null), -- Скважина - Скважина
+VALUES( 2, 1, 1), -- Куст - Скважина
+VALUES( 2, 2, null), -- Куст - Куст
+VALUES( 3, 1, 2), -- Пласт - Скважина
+VALUES( 3, 3, null), -- Пласт - Пласт
+VALUES( 4, 4, null), -- ЦДНГ - ЦДНГ
+VALUES( 4, 2, 3), -- ЦДНГ -- КУСТ
+VALUES( 5, 5, null),  -- НГДУ -- НГДУ
+VALUES( 5, 4, 4),  -- НГДУ - ЦДНГ
+VALUES( 5, 6, 5),  -- НГДУ - Месторождение
+VALUES( 6, 6, null),  -- Месторождение -- Месторождение
+VALUES( 6, 7, 6), -- Месторождение - Объект разработки
+VALUES( 7, 7, null ),  -- Объект разработки - Объект разработки
+VALUES( 7, 3, 7);  -- Объект разработки -Пласт
+
+CREATE TABLE connection_path (
+    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    type VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+GRANT
+SELECT,
+INSERT,
+DELETE,
+UPDATE ON connection_path TO user_hack;
+
+INSERT INTO connection_path(type)
+VALUES(  "kust_well"), -- Куст - Скважина
+VALUES( "plast_well"), -- Пласт - Скважина
+VALUES( "cdng_kust"), -- ЦДНГ -- КУСТ
+VALUES( "ngdu_cdng"),  -- НГДУ - ЦДНГ
+VALUES( "ngdu_mest"),  -- НГДУ - Месторождение
+VALUES( "mest_obj"), -- Месторождение - Объект разработки
+VALUES( "obj_plast");  -- Объект разработки -Пласт
 
 
 
