@@ -60,7 +60,7 @@ WITH (FORMAT CSV, DELIMITER ';', HEADER, ENCODING 'UTF8');
 
 CREATE TABLE obj_plast (
     objid BIGINT,
-    ngdobjnameuname VARCHAR(50),
+    objname VARCHAR(50),
     plastid BIGINT,
     plastname VARCHAR(50)
 );
