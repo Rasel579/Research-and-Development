@@ -24,10 +24,12 @@ def search_web(query, num_results=3):
                     f"Заголовок: {r.get('title', 'Нет заголовка')}\nСсылка: {r.get('href', '')}\nОписание: {r.get('body', '')}\n")
 
         if not results:
+            print(f"Пустой поисковик : {results}")
             return "Ничего не найдено 😿"
-
+        print(f"Поисковик с результатами : {results}")
         return "\n---\n".join(results)
     except Exception as e:
+        print(f"Пустой сломался : {e}")
         return f"Поиск сломался: {e}"
 
 def fetch_url_content(url):
@@ -43,6 +45,7 @@ def fetch_url_content(url):
         text = soup.get_text(separator='\n', strip=True)
         return text[:2000] + "..." if len(text) > 2000 else text
     except Exception as e:
+        print(f"Не удалось открыть сайт : {e}")
         return f"Не удалось открыть сайт: {e}"
 
 def needs_search(user_text):
@@ -61,7 +64,6 @@ def get_ollama_response(user_id, prompt):
     messages = [{"role": "system", "content": LLM_INSTRUCTIONS}] + conversations[user_id]
 
     if needs_search(prompt):
-        # Сначала ищем
         search_results = search_web(prompt, num_results=2)
         enhanced_prompt = (
             f"Пользователь спросил: '{prompt}'\n\n"
