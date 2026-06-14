@@ -7,11 +7,13 @@ TOKEN = os.environ['VK_BOT_API']
 GROUP_ID = 123456789
 OLLAMA_MODEL = os.environ['LLM_MODEL']
 OLLAMA_URL = os.environ['LLM_URI'] + '/api/generate'
+LLM_INSTRUCTIONS = os.environ['LLM_INSTRUCTIONS']
 
 def get_ollama_response(prompt):
     data = {
         "model": OLLAMA_MODEL,
         "prompt": prompt,
+        "system": LLM_INSTRUCTIONS,
         "stream": False
     }
     try:
