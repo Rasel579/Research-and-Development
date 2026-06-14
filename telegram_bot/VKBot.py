@@ -75,10 +75,7 @@ def get_ollama_response(user_id, prompt):
         messages.append({"role": "user", "content": prompt})
 
     try:
-        response = requests.post(OLLAMA_URL, json={"model": OLLAMA_MODEL, "messages": messages, "stream": False, "options": {
-            "thinking": False
-        }},
-                                 timeout=600)
+        response = requests.post(OLLAMA_URL, json={"model": OLLAMA_MODEL, "messages": messages, "stream": False, "think": False},timeout=600)
         response.raise_for_status()
         bot_answer = response.json().get("message", {}).get("content", "Ой, Марсик съел ответ 😿")
 
