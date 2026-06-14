@@ -32,11 +32,11 @@ def main():
             peer_id = event.peer_id
             user_message = event.text.lower()
             bot_answer = get_ollama_response(user_message)
-            vk.method('messages.send', {
-                'user_id': event.user_id,
-                'message': bot_answer,
-                'random_id': 0
-            })
+            vk.messages.send(
+                user_id=event.user_id,
+                message=bot_answer,
+                random_id=0
+            )
 
 if __name__ == "__main__":
     main()
