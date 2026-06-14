@@ -1,0 +1,1 @@
+from .yotu2B import YotoModel
