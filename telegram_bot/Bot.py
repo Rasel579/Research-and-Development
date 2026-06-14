@@ -1,4 +1,5 @@
-from transformers import GPTLanguageModel
+from hf_models import YotoModel
+from custom_transformers import GPTLanguageModel
 from bpe import  BasicTokenizer
 import torch
 import os
@@ -22,8 +23,7 @@ class Bot:
         self.tokenizer_pass = tokenizer_pass
         self.load_model()
         self.setup_bot()
-
-
+        self.hf_model = YotoModel()
 
     def load_model(self):
         tokenizer = BasicTokenizer()
@@ -98,7 +98,7 @@ class Bot:
             return "⚠️ Произошла ошибка при генерации. Попробуйте еще раз."
 
     def _generate_sync(self, user_text: str):
-        input_tokens = self.tokenizer.encode(user_text)
+       """ input_tokens = self.tokenizer.encode(user_text)
         input_tokens = torch.tensor(input_tokens, dtype=torch.long).unsqueeze(0).to(self.device)
         self.model.eval()
         with torch.no_grad():
@@ -106,8 +106,8 @@ class Bot:
         a = output[0]
         response = self.tokenizer.decode(a.tolist())
         if response.startswith(user_text):
-            response = response[len(user_text):].strip()
-        return response
+            response = response[len(user_text):].strip() """
+       return self.hf_model.generate(user_text)
 
     def run_bot(self):
         print("🤖 Запускаю Telegram бота...")

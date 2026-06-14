@@ -3,6 +3,9 @@ import torch
 import torch.nn as nn
 from  torch.nn import functional as F
 
+from bpe import BasicTokenizer
+
+
 def print_model_structure(model: torch.nn.Module, indent: str = '') -> None:
     for name, child in model.named_children():
         params = sum(p.numel() for p in child.parameters())
@@ -67,7 +70,14 @@ class Block(nn.Module):
         return x
 
 class GPTLanguageModel(nn.Module):
-    def __init__(self, vocab_size: int, n_embeddings: int, block_size: int, n_head: int, n_layers: int, dropout: float, device: str, ignore_index = -100) -> None:
+    def __init__(self, vocab_size: int,
+                 n_embeddings: int,
+                 block_size: int,
+                 n_head: int,
+                 n_layers: int,
+                 dropout: float,
+                 device: str,
+                 ignore_index = -100) -> None:
         super().__init__()
         self.ignore_index = ignore_index
         self.block_size = block_size
@@ -138,3 +148,15 @@ if __name__ == "__main__":
     logits, loss = model(x)
     print(logits.shape, loss)
     print_model_structure(model)
+
+    TOKENIZER_PATH = '../output/tokenizer/tokenzier_v1.model'
+    tokenizer = BasicTokenizer()
+    tokenizer.load(model_file=TOKENIZER_PATH)
+    input_tokens = tokenizer.encode('Привет, как дела?')
+    input_tokens = torch.tensor(input_tokens, dtype=torch.long).unsqueeze(0).to(device)
+    model.eval()
+    with torch.no_grad():
+        output = model.generate(input_tokens, 100)
+    a = output[0]
+    response = tokenizer.decode(a.tolist())
+    print(response)
