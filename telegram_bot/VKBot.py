@@ -1,9 +1,8 @@
 import requests
 import vk_api
 import os
-from duckduckgo_search import DDGS
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
+import ddgs
 from vk_api.longpoll import VkLongPoll, VkEventType
 
 TOKEN = os.environ['VK_BOT_API']
@@ -18,8 +17,8 @@ conversations = {}
 def search_web(query, num_results=3):
     try:
         results = []
-        with DDGS() as ddgs:
-            search_results = list(ddgs.text(query, max_results=num_results))
+        with ddgs:
+            search_results = list(ddgs.DDGS.text(query, max_results=num_results))
             for r in search_results:
                 results.append(
                     f"Заголовок: {r.get('title', 'Нет заголовка')}\nСсылка: {r.get('href', '')}\nОписание: {r.get('body', '')}\n")
