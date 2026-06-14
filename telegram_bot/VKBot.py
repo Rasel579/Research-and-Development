@@ -2,7 +2,7 @@ import requests
 import vk_api
 import os
 from bs4 import BeautifulSoup
-import ddgs
+from ddgs import DDGS
 from vk_api.longpoll import VkLongPoll, VkEventType
 
 TOKEN = os.environ['VK_BOT_API']
@@ -17,8 +17,8 @@ conversations = {}
 def search_web(query, num_results=3):
     try:
         results = []
-        with ddgs:
-            search_results = list(ddgs.DDGS.text(query, max_results=num_results))
+        with DDGS() as ddg:
+            search_results = list(ddg.text(query, max_results=num_results))
             for r in search_results:
                 results.append(
                     f"Заголовок: {r.get('title', 'Нет заголовка')}\nСсылка: {r.get('href', '')}\nОписание: {r.get('body', '')}\n")
