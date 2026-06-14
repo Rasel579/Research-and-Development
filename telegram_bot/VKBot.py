@@ -64,7 +64,7 @@ def get_ollama_response(user_id, prompt):
     messages = [{"role": "system", "content": LLM_INSTRUCTIONS}] + conversations[user_id]
 
     if needs_search(prompt):
-        search_results = search_web(prompt, num_results=2)
+        search_results = search_web(prompt, num_results=10)
         enhanced_prompt = (
             f"Пользователь спросил: '{prompt}'\n\n"
             f"Вот что я нашел в интернете:\n{search_results}\n\n"
@@ -75,8 +75,10 @@ def get_ollama_response(user_id, prompt):
         messages.append({"role": "user", "content": prompt})
 
     try:
-        response = requests.post(OLLAMA_URL, json={"model": OLLAMA_MODEL, "messages": messages, "stream": False},
-                                 timeout=120)
+        response = requests.post(OLLAMA_URL, json={"model": OLLAMA_MODEL, "messages": messages, "stream": False, "options": {
+            "thinking": False
+        }},
+                                 timeout=600)
         response.raise_for_status()
         bot_answer = response.json().get("message", {}).get("content", "Ой, Марсик съел ответ 😿")
 
