@@ -1,6 +1,7 @@
 import requests
 import vk_api
 import os
+from LLamaCpp import LLamaCpp
 from bs4 import BeautifulSoup
 from ddgs import DDGS
 from vk_api.longpoll import VkLongPoll, VkEventType
@@ -88,10 +89,14 @@ def get_ollama_response(user_id, prompt):
     except Exception as e:
         return f'Что-то сломалось: {e}'
 
+def answer_llama( llm: LLamaCpp, msg, user_id):
+    return llm.response(user_id, msg)
+
 def main():
     vk_session = vk_api.VkApi(token=TOKEN)
     vk = vk_session.get_api()
     longpoll = VkLongPoll(vk_session)
+    llama_cpp = LLamaCpp()
 
     print("Бот запущен и слушает сообщения...")
 
@@ -103,7 +108,7 @@ def main():
                 vk.messages.send(user_id=event.user_id, message="Память очищена! 🧼", random_id=0)
                 continue
 
-            bot_answer = get_ollama_response(event.user_id, user_message)
+            bot_answer = answer_llama(llama_cpp, event.user_id, user_message)
             vk.messages.send(
                 user_id=event.user_id,
                 message=bot_answer,
