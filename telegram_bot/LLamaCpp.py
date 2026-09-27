@@ -33,12 +33,14 @@ class LLamaCpp:
         return {"city": city, "temperature": 22, "unit": unit, "condition": "sunny"}
 
     def response(self, user_id, prompt):
+        print(prompt)
         msg = {"role": "user", "content": prompt}
         response = requests.post(
             self.uri,
             json={
                 "model": self.model,
                 "messages": [msg],
+                "stream" : False,
                 "tools": self.tools
             }
         )
