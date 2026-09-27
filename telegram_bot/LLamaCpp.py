@@ -43,6 +43,7 @@ class LLamaCpp:
             }
         )
         result = response.json()
+        print(result)
         tools_calls = result["choices"]["messages"][0]["content"].get("tools_calls")
         if tools_calls:
             tool_call = tools_calls[0]
