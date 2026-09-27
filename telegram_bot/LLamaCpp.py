@@ -46,7 +46,9 @@ class LLamaCpp:
         )
         result = response.json()
         print(result)
-        tools_calls = result["choices"]["messages"][0]["content"].get("tools_calls")
+        choice = result["choices"][0]
+        message = choice["message"]
+        tools_calls = message.get("tool_calls")
         if tools_calls:
             tool_call = tools_calls[0]
             args = json.loads(tool_call["function"]["arguments"])
