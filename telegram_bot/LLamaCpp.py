@@ -21,10 +21,13 @@ TOOLS =  [
     }
 ]
 
+MODEL = "~/bonsai/Bonsai-demo/models/gguf/27B/Bonsai-27B-Q1_0.gguf"
+
 class LLamaCpp:
     def __init__(self):
         self.uri = OLLAMA_URL
         self.tools = TOOLS
+        self.model = MODEL
 
     def get_weather(city: str, unit: str = "celsius"):
         return {"city": city, "temperature": 22, "unit": unit, "condition": "sunny"}
@@ -34,7 +37,7 @@ class LLamaCpp:
         response = requests.post(
             self.uri,
             json={
-                "model": "model.gguf",
+                "model": self.model,
                 "messages": [msg],
                 "tools": self.tools
             }
@@ -48,7 +51,7 @@ class LLamaCpp:
             response = requests.post(
             self.uri,
             json={
-                "model": "model.gguf",
+                "model": self.model,
                 "messages": [msg, result["choices"][0]["message"],
                 {
                     "role": "tool",
@@ -57,5 +60,6 @@ class LLamaCpp:
                 }]
             }
         )
+        print(response.json())
         return response.json()["choices"][0]["message"]["content"]
 

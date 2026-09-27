@@ -10,7 +10,7 @@ TOKEN = os.environ['VK_BOT_API']
 GROUP_ID = 123456789
 OLLAMA_MODEL = os.environ['LLM_MODEL']
 OLLAMA_URL = os.environ['LLM_URI'] + '/api/chat'
-LLM_INSTRUCTIONS = os.environ['LLM_INSTRUCTIONS']
+LLM_INSTRUCTIONS = "" """os.environ['LLM_INSTRUCTIONS']"""
 
 conversations = {}
 
