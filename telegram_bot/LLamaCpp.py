@@ -82,7 +82,7 @@ class LLamaCpp:
                            "get_weather": self.weather_api.get_weather,
                          }
 
-    def response(self, user_id, prompt, max_iters: int = 20):
+    def response(self, user_id, prompt, vk, max_iters: int = 20):
         print(prompt)
         msg = [{"role": "system", "content": SYSTEM_PROMPT},
                {"role": "user", "content": prompt}]
@@ -108,6 +108,11 @@ class LLamaCpp:
                 fname = tool["function"]["name"]
                 args = json.loads(tool["function"]["arguments"])
                 print(f"  🔧 {fname}({args})")
+                vk.messages.send(
+                    user_id=user_id,
+                    message=f"  🔧 {fname}({args})",
+                    random_id=0
+                )
                 try:
                     result = self.TOOL_IMPL[fname](**args)
                 except Exception as e:
@@ -119,5 +124,5 @@ class LLamaCpp:
                     "content": str(result)[:8000],
                 })
         print("Лимит итераций, сорян 😅")
-        return msg
+        return result["choices"][0]["message"]
 
