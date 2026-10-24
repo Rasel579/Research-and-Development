@@ -108,11 +108,14 @@ class LLamaCpp:
                 fname = tool["function"]["name"]
                 args = json.loads(tool["function"]["arguments"])
                 print(f"  🔧 {fname}({args})")
-                vk.messages.send(
-                    user_id=user_id,
-                    message=f"  🔧 {fname}({args})",
-                    random_id=0
-                )
+                try:
+                        vk.messages.send(
+                            user_id=user_id,
+                            message=f"  🔧 {fname}({args})",
+                            random_id=0
+                        )
+                except Exception as e:
+                    print(f"Ошибка: {e}")
                 try:
                     result = self.TOOL_IMPL[fname](**args)
                 except Exception as e:
