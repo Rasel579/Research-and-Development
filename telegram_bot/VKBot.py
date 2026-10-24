@@ -89,8 +89,8 @@ def get_ollama_response(user_id, prompt):
     except Exception as e:
         return f'Что-то сломалось: {e}'
 
-def answer_llama( llm: LLamaCpp, msg, user_id):
-    return llm.response(user_id, msg)
+def answer_llama( llm: LLamaCpp, msg, user_id, vk):
+    return llm.response(user_id, msg, vk)
 
 def main():
     vk_session = vk_api.VkApi(token=TOKEN)
@@ -108,7 +108,7 @@ def main():
                 vk.messages.send(user_id=event.user_id, message="Память очищена! 🧼", random_id=0)
                 continue
 
-            bot_answer = answer_llama(llama_cpp, user_message, event.user_id)
+            bot_answer = answer_llama(llama_cpp, user_message, event.user_id, vk)
             vk.messages.send(
                 user_id=event.user_id,
                 message=bot_answer,
