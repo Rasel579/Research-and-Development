@@ -109,11 +109,14 @@ def main():
                 continue
 
             bot_answer = answer_llama(llama_cpp, user_message, event.user_id, vk)
-            vk.messages.send(
-                user_id=event.user_id,
-                message=bot_answer,
-                random_id=0
-            )
+            try:
+                vk.messages.send(
+                    user_id=event.user_id,
+                    message=bot_answer,
+                    random_id=0
+                )
+            except Exception as e:
+                print(f"Ошибка отправки сообщения: {e}")
 
 if __name__ == "__main__":
     main()
