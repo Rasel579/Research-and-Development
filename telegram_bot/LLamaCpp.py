@@ -105,8 +105,8 @@ class LLamaCpp:
             msg.append(message)
             tools_calls = message.get("tool_calls")
             for tool in tools_calls:
-                fname = tool.function.name
-                args = json.loads(tool.function.arguments)
+                fname = tool["function"]["name"]
+                args = json.loads(tool["function"]["arguments"])
                 print(f"  🔧 {fname}({args})")
                 try:
                     result = self.TOOL_IMPL[fname](**args)
@@ -115,8 +115,8 @@ class LLamaCpp:
 
                 msg.append({
                     "role": "tool",
-                    "tool_call_id": tool.id,
-                    "content": str(result)[:8000],  # не засовывай гигабайты в контекст
+                    "tool_call_id": tool["id"],
+                    "content": str(result)[:8000],
                 })
         print("Лимит итераций, сорян 😅")
         print(response.json())
