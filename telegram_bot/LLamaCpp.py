@@ -1,6 +1,7 @@
 import os
 import requests
 import json
+from WeatherApi import WeatherApi
 
 OLLAMA_URL = os.environ['LLM_URI'] + '/v1/chat/completions'
 TOOLS =  [
@@ -12,8 +13,7 @@ TOOLS =  [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "location": {"type": "string", "description": "City and state"},
-                    "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}
+                    "location": {"type": "string", "description": "City and state"}
                 },
                 "required": ["location"]
             }
@@ -28,9 +28,7 @@ class LLamaCpp:
         self.uri = OLLAMA_URL
         self.tools = TOOLS
         self.model = MODEL
-
-    def get_weather(city: str, unit: str = "celsius"):
-        return {"city": city, "temperature": 22, "unit": unit, "condition": "sunny"}
+        self.weather_api = WeatherApi()
 
     def response(self, user_id, prompt):
         print(prompt)
@@ -52,7 +50,7 @@ class LLamaCpp:
         if tools_calls:
             tool_call = tools_calls[0]
             args = json.loads(tool_call["function"]["arguments"])
-            weather_result = {"temperature": 72, "condition": "sunny"}
+            weather_result = self.weather_api.get_weather(args["location"])
             response = requests.post(
             self.uri,
             json={
