@@ -119,6 +119,5 @@ class LLamaCpp:
                     "content": str(result)[:8000],
                 })
         print("Лимит итераций, сорян 😅")
-        print(response.json())
-        return response.json()["choices"][0]["message"]["content"]
+        return msg
 
