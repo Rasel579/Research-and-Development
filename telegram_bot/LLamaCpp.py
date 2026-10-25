@@ -171,6 +171,11 @@ class LLamaCpp:
                 })
         print("Лимит итераций, сорян 😅")
         try:
+            vk.messages.send(
+                user_id=user_id,
+                message="Лимит итераций, сорян 😅",
+                random_id=0
+            )
             return result["choices"][0]["message"]["content"]
         except Exception as e:
             return f"Ошибка: {e}"
