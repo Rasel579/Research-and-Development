@@ -90,21 +90,22 @@ SYSTEM_PROMPT = """Ты — агент-разработчик. Ты работа
 
 class LLamaCpp:
     def __init__(self, vk):
+        self.TOOL_IMPL = None
         self.github_api = None
         self.uri = OLLAMA_URL
         self.tools = TOOLS
         self.model = MODEL
         self.weather_api = WeatherApi()
         self.vk = vk
+
+    def response(self, user_id, prompt, vk, max_iters: int = 20):
+        self.github_api = GithubTool(vk, user_id)
         self.TOOL_IMPL = { "read_file": ShellTool.read_file,
                            "write_file": ShellTool.write_file,
                            "run_command": ShellTool.run_command,
                            "get_weather": self.weather_api.get_weather,
                            "manage_repo_and_push": self.github_api.manage_repo_and_push,
                          }
-
-    def response(self, user_id, prompt, vk, max_iters: int = 20):
-        self.github_api = GithubTool(vk, user_id)
         print(prompt)
         msg = [{"role": "system", "content": SYSTEM_PROMPT},
                {"role": "user", "content": prompt}]
