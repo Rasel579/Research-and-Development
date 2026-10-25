@@ -3,7 +3,7 @@ import requests
 import json
 from WeatherApi import WeatherApi
 import ShellTool
-from telegram_bot.GithubTool import GithubTool
+from GithubTool import GithubTool
 
 OLLAMA_URL = os.environ['LLM_URI'] + '/v1/chat/completions'
 TOOLS =  [
