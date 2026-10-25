@@ -97,7 +97,9 @@ class LLamaCpp:
                 }
             )
             result = response.json()
+            print("\n*****************\n")
             print(result)
+            print("\n*****************\n")
             choice = result["choices"][0]
             message = choice["message"]
             if not message.get("tool_calls"):
