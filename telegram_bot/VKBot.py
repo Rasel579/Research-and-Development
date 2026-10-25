@@ -96,7 +96,7 @@ def main():
     vk_session = vk_api.VkApi(token=TOKEN)
     vk = vk_session.get_api()
     longpoll = VkLongPoll(vk_session)
-    llama_cpp = LLamaCpp()
+    llama_cpp = LLamaCpp(vk)
 
     print("Бот запущен и слушает сообщения...")
 
