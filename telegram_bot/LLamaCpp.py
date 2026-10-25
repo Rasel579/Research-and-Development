@@ -102,20 +102,28 @@ class LLamaCpp:
             print("\n*****************\n")
             choice = result["choices"][0]
             message = choice["message"]
+            try:
+                vk.messages.send(
+                    user_id=user_id,
+                    message=message["content"],
+                    random_id=0
+                )
+            except Exception as e:
+                print(f"Ошибка: {e}")
             if not message.get("tool_calls"):
-                return message
+                return message["content"]
             msg.append(message)
             tools_calls = message.get("tool_calls")
             for tool in tools_calls:
                 fname = tool["function"]["name"]
                 args = json.loads(tool["function"]["arguments"])
-                print(f"  🔧 {fname}({args})")
+                print(f"🔧 {fname}({args})")
                 try:
-                        vk.messages.send(
-                            user_id=user_id,
-                            message=f"  🔧 {fname}({args})",
-                            random_id=0
-                        )
+                  vk.messages.send(
+                    user_id=user_id,
+                    message=f"🔧 {fname}({args})",
+                    random_id=0
+                  )
                 except Exception as e:
                     print(f"Ошибка: {e}")
                 try:
@@ -129,5 +137,5 @@ class LLamaCpp:
                     "content": str(result)[:8000],
                 })
         print("Лимит итераций, сорян 😅")
-        return result["choices"][0]["message"]
+        return result["choices"][0]["message"]["content"]
 
