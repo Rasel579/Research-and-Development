@@ -102,6 +102,8 @@ class LLamaCpp:
             print("\n*****************\n")
             choice = result["choices"][0]
             message = choice["message"]
+            if not message.get("tool_calls"):
+                return message["content"]
             try:
                 vk.messages.send(
                     user_id=user_id,
@@ -110,8 +112,6 @@ class LLamaCpp:
                 )
             except Exception as e:
                 print(f"Ошибка: {e}")
-            if not message.get("tool_calls"):
-                return message["content"]
             msg.append(message)
             tools_calls = message.get("tool_calls")
             for tool in tools_calls:
