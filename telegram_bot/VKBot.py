@@ -108,8 +108,8 @@ def main():
                 vk.messages.send(user_id=event.user_id, message="Память очищена! 🧼", random_id=0)
                 continue
 
-            bot_answer = answer_llama(llama_cpp, user_message, event.user_id, vk)
             try:
+                bot_answer = answer_llama(llama_cpp, user_message, event.user_id, vk)
                 vk.messages.send(
                     user_id=event.user_id,
                     message=bot_answer,
