@@ -168,5 +168,9 @@ class LLamaCpp:
                     "content": str(result)[:8000],
                 })
         print("Лимит итераций, сорян 😅")
-        return result["choices"][0]["message"]["content"]
+        try:
+            return result["choices"][0]["message"]["content"]
+        except Exception as e:
+            return f"Ошибка: {e}"
+
 
