@@ -84,8 +84,8 @@ TOOLS =  [
     {
         "type": "function",
         "function": {
-            "name": "update_repo",
-            "description": "переключает в ветку (по-умолчанию main) и подтягивает изменения с удаленого репозитория",
+            "name": "switch_branch_and_update_repo",
+            "description": "переключает в ветку git (по-умолчанию main) и подтягивает изменения с удаленного репозитория",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -131,7 +131,7 @@ class LLamaCpp:
                            "run_command": ShellTool.run_command,
                            "get_weather": self.weather_api.get_weather,
                            "manage_repo_and_push": self.github_api.manage_repo_and_push,
-                           "update_repo": self.github_api.update_repo,
+                           "switch_branch_and_update_repo": self.github_api.update_repo,
                          }
         print(prompt)
         msg = [{"role": "system", "content": SYSTEM_PROMPT},
