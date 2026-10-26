@@ -84,8 +84,8 @@ TOOLS =  [
     {
         "type": "function",
         "function": {
-            "name": "update_repo",
-            "description": "переключает в ветку (по-умолчанию main) и подтягивает изменения с удаленого репозитория",
+            "name": "switch_branch_and_update_repo",
+            "description": "переключает в ветку git (по-умолчанию main) и подтягивает изменения с удаленного репозитория",
             "parameters": {
                 "type": "object",
                 "properties": {
