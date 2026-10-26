@@ -131,7 +131,7 @@ class LLamaCpp:
                            "run_command": ShellTool.run_command,
                            "get_weather": self.weather_api.get_weather,
                            "manage_repo_and_push": self.github_api.manage_repo_and_push,
-                           "update_repo": self.github_api.update_repo,
+                           "switch_branch_and_update_repo": self.github_api.update_repo,
                          }
         print(prompt)
         msg = [{"role": "system", "content": SYSTEM_PROMPT},
