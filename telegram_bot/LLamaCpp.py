@@ -109,7 +109,7 @@ class LLamaCpp:
         self.weather_api = WeatherApi()
         self.vk = vk
 
-    def response(self, user_id, prompt, vk, max_iters: int = 20):
+    def response(self, user_id, prompt, vk, max_iters: int = 40):
         self.github_api = GithubTool(vk, user_id)
         self.TOOL_IMPL = { "read_file": ShellTool.read_file,
                            "write_file": ShellTool.write_file,
@@ -168,7 +168,7 @@ class LLamaCpp:
                 msg.append({
                     "role": "tool",
                     "tool_call_id": tool["id"],
-                    "content": str(result)[:8000],
+                    "content": str(result)[:20000],
                 })
         print("Лимит итераций, сорян 😅")
         try:
