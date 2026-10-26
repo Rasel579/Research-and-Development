@@ -15,6 +15,17 @@ class GithubTool:
         self.vk = vk
         self.user_id = user_id
 
+    def update_repo(self, repo_path: str, branch: str = "main") -> str:
+        try:
+            local_repo = Repo(repo_path)
+            local_repo.heads[branch].checkout()
+            origin = local_repo.remote('origin')
+            origin.pull()
+            return f"✅ Репозиторий {repo_path} {branch} обновлен"
+        except Exception as e:
+            return f"💥 Критический сбой тулзы: {str(e)}"
+
+
     def manage_repo_and_push(self, repo_name: str, repo_path: str,
                              branch_name: str = None, commit_message: str = None):
         user = self.github.get_user()
