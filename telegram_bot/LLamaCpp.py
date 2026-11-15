@@ -1,9 +1,6 @@
 import os
 import requests
 import json
-from WeatherApi import WeatherApi
-import ShellTool
-from GithubTool import GithubTool
 
 OLLAMA_URL = os.environ['LLM_URI'] + '/v1/chat/completions'
 MODEL = "~/bonsai/Bonsai-demo/models/gguf/27B/Bonsai-27B-Q1_0.gguf"
@@ -18,7 +15,6 @@ class LLamaCpp:
         self.vk = vk
 
     def response(self, user_id, prompt, vk, tools, tool_impl, system_prompt, max_iters: int = 28):
-        self.github_api = GithubTool(vk, user_id)
         self.tools = tools
         self.TOOL_IMPL = tool_impl
         print(prompt)
