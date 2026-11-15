@@ -7,7 +7,7 @@ from vk_api.longpoll import VkEventType, VkLongPoll
 from vk_api.vk_api import VkApiMethod
 from vk_api.upload import VkUpload
 from urllib.parse import quote
-from telegram_bot.LLamaCpp import LLamaCpp
+from LLamaCpp import LLamaCpp
 
 TOOLS =  [
     {
