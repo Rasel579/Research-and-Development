@@ -6,12 +6,121 @@ from bs4 import BeautifulSoup
 from ddgs import DDGS
 from vk_api.longpoll import VkLongPoll, VkEventType
 
+from telegram_bot import ShellTool
+from telegram_bot.GithubTool import GithubTool
+from telegram_bot.WeatherApi import WeatherApi
+
 TOKEN = os.environ['VK_BOT_API']
-GROUP_ID = 123456789
-OLLAMA_MODEL = os.environ['LLM_MODEL']
-OLLAMA_URL = os.environ['LLM_URI'] + '/api/chat'
+OLLAMA_MODEL = ""
+OLLAMA_URL = ""
 LLM_INSTRUCTIONS = "" """os.environ['LLM_INSTRUCTIONS']"""
 
+SYSTEM_PROMPT = """Ты — агент-разработчик. Ты работаешь в локальной директории проекта.
+                   Используй инструменты чтобы читать, писать файлы и выполнять команды.
+                   Думай пошагово. Если задача неясна — уточни.
+                   Правило №1: НИКОГДА не создавай проект с нуля, если папка с таким именем 
+                   уже существует. Сначала всегда используй инструмент ls,
+                   чтобы проверить наличие директории. Если папка есть — просто переходи 
+                   в неё (cd) и переключайся в main ветку и подтягивай изменения из github. 
+                   Правило №2: главной веткой всегда должна быть - main, 
+                   если не так то сделай главной main и отправь в репозиторий.
+                   Правило №3: Когда найдешь директорию обнови главную ветку 
+                   изменения с GitHub и создай новую ветку от нее и работай в ней.
+                   Правила №4: Если папки с проектом не нашлось, 
+                   то уже Создавай новую папку и создавай новый репозиторий в github
+                   Правила №5: Для работы с Git и Github используй инструмент `manage_repo_and_push`"""
+
+TOOLS =  [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get current weather for a location",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {"type": "string", "description": "City and state"}
+                },
+                "required": ["location"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "read_file",
+            "description": "Прочитать содержимое файла",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "путь к файлу"}
+                },
+                "required": ["path"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "write_file",
+            "description": "Записать содержимое в файл",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string"},
+                    "content": {"type": "string"}
+                },
+                "required": ["path", "content"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "run_command",
+            "description": "Выполнить shell-команду и вернуть вывод",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "command": {"type": "string"}
+                },
+                "required": ["command"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "manage_repo_and_push",
+            "description": "Определяет работу с Github, или создает новый репозиторий или добавляет новую ветку с push-request",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "repo_name": {"type": "string"},
+                    "repo_path": {"type": "string"},
+                    "branch_name": {"type": "string"},
+                    "commit_message": {"type": "string"}
+                },
+                "required": ["repo_name", "repo_path", "branch_name", "commit_message"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "switch_branch_and_update_repo",
+            "description": "переключает в ветку git (по-умолчанию main) и подтягивает изменения с удаленного репозитория",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "repo_path": {"type": "string"},
+                    "branch": {"type": "string"},
+                },
+                "required": ["repo_path"]
+            }
+        }
+    }
+]
 conversations = {}
 
 
@@ -90,7 +199,16 @@ def get_ollama_response(user_id, prompt):
         return f'Что-то сломалось: {e}'
 
 def answer_llama( llm: LLamaCpp, msg, user_id, vk):
-    return llm.response(user_id, msg, vk)
+    weather_api = WeatherApi()
+    github_api = GithubTool(vk, user_id)
+    tool_impl = { "read_file": ShellTool.read_file,
+                  "write_file": ShellTool.write_file,
+                  "run_command": ShellTool.run_command,
+                  "get_weather": weather_api.get_weather,
+                  "manage_repo_and_push": github_api.manage_repo_and_push,
+                  "switch_branch_and_update_repo": github_api.update_repo,
+                }
+    return llm.response(user_id, msg, vk, TOOLS, tool_impl, SYSTEM_PROMPT)
 
 def main():
     vk_session = vk_api.VkApi(token=TOKEN)
