@@ -57,7 +57,7 @@ TOOLS =  [
     "type": "function",
     "function": {
         "name": "get_meme",
-        "description": "Ищет и возвращает мем по заданной категории (тегу). Возвращает объект мема, который можно напрямую передать в тулзу post_meme для публикации в группу. Использует парсинг.",
+        "description": "Ищет и возвращает мем по заданной категории (тегу). Возвращает объект мема, который можно напрямую передать в тулзу post_meme для публикации в группу перед этим необходимо найти соотвествие описания картинки заданной тематики через тулзу img_ocr. Использует парсинг.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -75,7 +75,24 @@ TOOLS =  [
             },
             "required": ["meme_type"]
         }
-    }
+    },
+},
+{
+    "type": "function",
+    "function": {
+        "name": "img_ocr",
+        "description": "Описывает найденный мем по картинке",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "img_uri": {
+                    "type": "string",
+                    "description": "Путь к файлу",
+                },
+            },
+            "required": ["img_uri"]
+        }
+    },
 }
 ]
 
@@ -98,6 +115,8 @@ SYSTEM_PROMPT = """ # РОЛЬ
 # ТВОИ ВОЗМОЖНОСТИ
 У тебя есть тулза `post_meme`, которая отправляет 
 мем на стену группы ВК и get_meme для поиска мемов из источника
+также есть тулза `get_meme`, которая получает мем по тегу,
+и есть тулза `img_ocr` для описания мема из полученного `get_meme`
 
 # КОГДА ИСПОЛЬЗОВАТЬ ТУЛЗУ
 ✅ Человек явно просит мем / шутку / поднять настроение
@@ -113,11 +132,12 @@ SYSTEM_PROMPT = """ # РОЛЬ
 🚫 Нет подходящей картинки под ситуацию — лучше пошутить текстом
 
 # ПРАВИЛА
-1. Перед отправкой мема кратко прокомментируй его в чате — объясни, почему именно сейчас.
-2. Текст мема должен быть коротким, ёмким, без душноты.
-3. Никогда не используй мемы на чувствительные темы (политика, трагедии, болезни).
-4. Если не уверен, уместен ли мем — лучше ответь текстом.
-5. Не повторяйся: если вчера кидал мем про программистов, сегодня найди другую тему.
+1. Перед отправкой мема проверь полученный мем.
+2. Перед отправкой мема кратко прокомментируй его в чате — объясни, почему именно сейчас.
+3. Текст мема должен быть коротким, ёмким, без душноты.
+4. Никогда не используй мемы на чувствительные темы (политика, трагедии, болезни).
+5. Если не уверен, уместен ли мем — лучше ответь текстом.
+6. Не повторяйся: если вчера кидал мем про программистов, сегодня найди другую тему.
 
 # ПРИМЕРЫ ПОВЕДЕНИЯ
 
@@ -135,7 +155,8 @@ SYSTEM_PROMPT = """ # РОЛЬ
 [вызывает meme = get_meme("Программирование") и вызывает
 post_meme(meme,"Когда код скомпилился с первого раза"]"""
 class VKAgent:
-    def __init__(self, vk_session: VkApiMethod, vk_group: VkApiMethod):
+    def __init__(self, user_id, vk_session: VkApiMethod, vk_group: VkApiMethod):
+        self.user_id = user_id
         self.vk_session = vk_session
         self.vk = vk_session
         self.tools = TOOLS
@@ -153,6 +174,11 @@ class VKAgent:
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print(f"❌ Ошибка при запросе: {e}")
+            self.vk_session.messages.send(
+                    user_id=self.user_id,
+                    message=f"❌ Ошибка при запросе: {e}",
+                    random_id=0
+                )
             return []
 
         soup = BeautifulSoup(response.text, "html.parser")
@@ -239,9 +265,10 @@ class VKAgent:
                os.remove(temp_filename)
 
 def answer_llama( llm: LLamaCpp, msg, user_id, vk, vk_service):
-    agent = VKAgent(vk,vk_service)
+    agent = VKAgent(user_id, vk,vk_service)
     tool_impl = { "post_meme": agent.post_meme,
                   "get_meme": agent.get_meme,
+                  "img_ocr": llm.img_ocr
                 }
     return llm.response(user_id, msg, vk, TOOLS, tool_impl, SYSTEM_PROMPT)
 

@@ -1,4 +1,6 @@
 import os
+from datetime import time
+
 import requests
 import json
 
@@ -80,5 +82,28 @@ class LLamaCpp:
             return result["choices"][0]["message"]["content"]
         except Exception as e:
             return f"Ошибка: {e}"
+
+    def img_ocr(self, img_uri):
+        img_response = requests.get(img_uri, timeout=10)
+        temp_filename = f"temp_meme_{int(time.time())}.jpg"
+
+        with open(temp_filename, "wb") as f:
+            f.write(img_response.content)
+        msg = [ {"role": "user", "content": [
+                {"type": "text", "text": "Опиши этот мем в одном предложении на русском. Что на нём происходит? Какая шутка?"},
+                {"type": "image_url", "image_url": {"url": temp_filename}}
+            ]}]
+        response = requests.post(
+            self.uri,
+            json={
+                "model": self.model,
+                "messages": msg,
+                "max_tokens": 150,
+                "temperature": 0.3
+            }
+        )
+        return response.json()["choices"][0]["message"]["content"].strip()
+
+
 
 
