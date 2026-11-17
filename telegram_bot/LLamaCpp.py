@@ -1,3 +1,4 @@
+import base64
 import os
 from datetime import time
 
@@ -8,13 +9,14 @@ OLLAMA_URL = os.environ['LLM_URI'] + '/v1/chat/completions'
 MODEL = "~/bonsai/Bonsai-demo/models/gguf/27B/Bonsai-27B-Q1_0.gguf"
 
 class LLamaCpp:
-    def __init__(self, vk):
+    def __init__(self, user_id, vk):
         self.TOOL_IMPL = None
         self.github_api = None
         self.uri = OLLAMA_URL
         self.tools = None
         self.model = MODEL
         self.vk = vk
+        self.user_id = user_id
 
     def response(self, user_id, prompt, vk, tools, tool_impl, system_prompt, max_iters: int = 28):
         self.tools = tools
@@ -89,9 +91,13 @@ class LLamaCpp:
 
         with open(temp_filename, "wb") as f:
             f.write(img_response.content)
+        with open(temp_filename, "rb") as f:
+            img_base64 = base64.b64encode(f.read()).decode("utf-8")
+        mime = "image/jpeg"
+
         msg = [ {"role": "user", "content": [
                 {"type": "text", "text": "Опиши этот мем в одном предложении на русском. Что на нём происходит? Какая шутка?"},
-                {"type": "image_url", "image_url": {"url": temp_filename}}
+                {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{img_base64}"}}
             ]}]
         response = requests.post(
             self.uri,
@@ -100,9 +106,20 @@ class LLamaCpp:
                 "messages": msg,
                 "max_tokens": 150,
                 "temperature": 0.3
-            }
+            },
+            timeout=60
         )
-        return response.json()["choices"][0]["message"]["content"].strip()
+        response.raise_for_status()
+        description = response.json()["choices"][0]["message"]["content"].strip()
+        print(f"🤖 Vision сказал: {description}")
+        self.vk.messages.send(
+            user_id=self.user_id,
+            message=description,
+            random_id=0
+        )
+        import os
+        os.remove(temp_filename)
+        return description
 
 
 
