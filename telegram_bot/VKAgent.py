@@ -340,5 +340,5 @@ def test():
         print(f"Успех! {llm.img_ocr(response[0].get("image_url"))} ")
 
 if __name__ == "__main__":
-    test()
+    main()
 
