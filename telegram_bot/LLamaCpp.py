@@ -1,6 +1,6 @@
 import base64
 import os
-from datetime import time
+import time
 
 import requests
 import json
@@ -99,17 +99,24 @@ class LLamaCpp:
                 {"type": "text", "text": "Опиши этот мем в одном предложении на русском. Что на нём происходит? Какая шутка?"},
                 {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{img_base64}"}}
             ]}]
-        response = requests.post(
-            self.uri,
-            json={
+        try:
+          response = requests.post(
+                  self.uri,
+                 json={
                 "model": self.model,
                 "messages": msg,
                 "max_tokens": 150,
                 "temperature": 0.3
             },
-            timeout=60
-        )
-        response.raise_for_status()
+            timeout=60)
+          response.raise_for_status()
+        except Exception as e:
+            print(f"Ошибка отправки сообщения: {e}")
+            self.vk.messages.send(
+                user_id=self.user_id,
+                message=f"Ошибка отправки сообщения: {e}",
+                random_id=0
+            )
         description = response.json()["choices"][0]["message"]["content"].strip()
         print(f"🤖 Vision сказал: {description}")
         self.vk.messages.send(
