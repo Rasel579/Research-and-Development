@@ -278,13 +278,13 @@ def main():
     longpoll = VkLongPoll(vk_session)
     vk_session_service = vk_api.VkApi(token=SERVICE_TOKEN)
     vk_service = vk_session_service.get_api()
-    llama_cpp = LLamaCpp(vk)
     print("Бот запущен и слушает сообщения...")
 
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me and event.text:
             user_message = event.text.lower()
             try:
+                llama_cpp = LLamaCpp(event.user_id, vk)
                 bot_answer = answer_llama(llama_cpp, user_message, event.user_id, vk,vk_service)
                 vk.messages.send(
                     user_id=event.user_id,
