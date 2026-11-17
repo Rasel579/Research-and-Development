@@ -198,7 +198,7 @@ class VKAgent:
 
         soup = BeautifulSoup(response.text, "html.parser")
         memes = []
-        stats = []
+        stats = {}
         stories = soup.select("article.story[data-story-id]")
 
         def rej(reason):
@@ -330,12 +330,15 @@ def test():
         "rating": 1
     }
 
-    response = agent.get_meme("баг", 1)
+    response = agent.get_meme("программирование", 1)
+
     if "error" in response:
         print("Ошибка:", response["error"])
     else:
         print(f"Успех! {response}")
+        llm = LLamaCpp(1, vk)
+        print(f"Успех! {llm.img_ocr(response[0].get("image_url"))} ")
 
 if __name__ == "__main__":
-    main()
+    test()
 
