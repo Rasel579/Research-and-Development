@@ -214,7 +214,6 @@ def main():
     vk_session = vk_api.VkApi(token=TOKEN)
     vk = vk_session.get_api()
     longpoll = VkLongPoll(vk_session)
-    llama_cpp = LLamaCpp(vk)
 
     print("Бот запущен и слушает сообщения...")
 
@@ -227,6 +226,7 @@ def main():
                 continue
 
             try:
+                llama_cpp = LLamaCpp(event.user_id, vk)
                 bot_answer = answer_llama(llama_cpp, user_message, event.user_id, vk)
                 vk.messages.send(
                     user_id=event.user_id,
