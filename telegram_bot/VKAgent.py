@@ -1,5 +1,7 @@
 import os
 import time
+from urllib.parse import quote, urlsplit, urlunsplit, urljoin
+
 import requests
 import vk_api
 from bs4 import BeautifulSoup
@@ -7,6 +9,9 @@ from vk_api.longpoll import VkEventType, VkLongPoll
 from vk_api.vk_api import VkApiMethod
 from vk_api.upload import VkUpload
 from LLamaCpp import LLamaCpp
+
+BLOCK_TAGS = {"текст", "18+", "nsfw", "реклама", "блоги компаний",
+              "мат", "негатив", "просьба", "ответ на пост"}
 
 TOOLS =  [
     {
@@ -154,6 +159,14 @@ SYSTEM_PROMPT = """ # РОЛЬ
 Ты: "О, это я люблю! 😎 Лови:"
 [вызывает meme = get_meme("Программирование") и вызывает
 post_meme(meme,"Когда код скомпилился с первого раза"]"""
+
+def _clean_url(u: str) -> str:
+    u = (u or "").strip()
+    if u.startswith("//"):
+        u = "https:" + u
+    p = urlsplit(u)
+    return urlunsplit((p.scheme, p.netloc, p.path, "", ""))
+
 class VKAgent:
     def __init__(self, user_id, vk_session: VkApiMethod, vk_group: VkApiMethod):
         self.user_id = user_id
@@ -163,11 +176,13 @@ class VKAgent:
         self.upload = VkUpload(vk_group)
 
     def get_meme(self, meme_type: str, limit: int = 3, min_rating: int = 0 ):
-        url = f"{MEME_URI}/tag/{meme_type}"
+        url = f"{MEME_URI}/tag/{quote(meme_type)}"
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Referer": MEME_URI,
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "ru-RU,ru;q=0.9",
         }
         try:
             response = requests.get(url, headers=headers, timeout=10)
@@ -183,45 +198,51 @@ class VKAgent:
 
         soup = BeautifulSoup(response.text, "html.parser")
         memes = []
-        stories = soup.select("article.story")
+        stats = []
+        stories = soup.select("article.story[data-story-id]")
+
+        def rej(reason):
+            stats[reason] = stats.get(reason, 0) + 1
         for story in stories:
             if len(memes) >= limit:
                 break
-            rating_str = story.get("data-rating", "0")
+            if (story.select_one(".story__placeholder, .story__promo, .story__advert-info")
+                    or story.get("data-is-fixed-story") == "true"):
+                rej("ad")
+                continue
+            raw = story.get("data-rating")
+            if raw is None:
+                rej("no_rating")
+                continue
             try:
-                rating = int(rating_str)
+                rating = int(raw)
             except ValueError:
                 rating = 0
 
             if rating < min_rating:
                 continue
-
-            img_el = story.select_one("div.story-image img")
-            img_url = None
-            if img_el:
-                img_url = img_el.get("data-large-image") or img_el.get("data-src") or img_el.get("src", "")
-            else:
-                carousel_img = story.select_one("div.carousel__item img")
-                if carousel_img:
-                    img_url = carousel_img.get("data-large-image") or carousel_img.get("data-src") or carousel_img.get(
-                        "src", "")
-            if not img_url:
+            tags = [a.get("data-tag", "").strip()
+                    for a in story.select("a.tags__tag")]
+            tagset = {t.lower().strip("[]") for t in tags if t}
+            if tagset & BLOCK_TAGS:
+                rej("blocked_tags")
                 continue
 
-            img_url = img_url.strip()
-            if img_url.startswith("//"):
-                img_url = "https:" + img_url
-
-            title_el = story.select_one("a.story__title-link")
-            title = title_el.text.strip() if title_el else "Безымянный мем"
-            post_url = title_el["href"] if title_el and title_el.has_attr("href") else ""
-            if post_url and not post_url.startswith("http"):
-                post_url = MEME_URI + post_url
+            imgs = []
+            for img in story.select("img.story-image__image, .carousel__item img"):
+                u = _clean_url(img.get("data-large-image")
+                               or img.get("data-src") or img.get("src"))
+                if u and u not in imgs:
+                    imgs.append(u)
+            if not imgs:
+                rej("no_image")
+                continue
+            title = story.select_one("a.story__title-link")
 
             memes.append({
-                "title": title,
-                "image_url": img_url,
-                "post_url": post_url,
+                "title": title.get_text(strip=True) if title else "",
+                "image_url": imgs[0],
+                "post_url": _clean_url(urljoin(MEME_URI, title["href"])) if title and title.has_attr("href") else "",
                 "rating": rating
             })
         return memes
@@ -301,7 +322,7 @@ def test():
     vk = vk_session.get_api()
     vk_session_service = vk_api.VkApi(token=SERVICE_TOKEN)
     vk_service = vk_session_service.get_api()
-    agent = VKAgent(vk, vk_service)
+    agent = VKAgent(1,vk, vk_service)
     memes = {
         "title": 'title',
         "image_url": 'https://cs16.pikabu.ru/s/2026/11/15/17/sjs4esre_lg.png',
@@ -309,12 +330,12 @@ def test():
         "rating": 1
     }
 
-    response = agent.post_meme(memes, "example")
+    response = agent.get_meme("баг", 1)
     if "error" in response:
         print("Ошибка:", response["error"])
     else:
-        print(f"Успех!")
+        print(f"Успех! {response}")
 
 if __name__ == "__main__":
-    main()
+    test()
 
